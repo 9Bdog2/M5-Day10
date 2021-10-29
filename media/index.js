@@ -36,7 +36,7 @@ mediaRouter.get("/", async (req, res, next) => {
 mediaRouter.get("/:imdbID", async (req, res, next) => {
   try {
     const medias = await getMediaJson();
-    const media = medias.find((p) => p._id === req.params.imdbID);
+    const media = medias.find((p) => p.imdbID === req.params.imdbID);
     if (media) {
       res.send(media);
     } else {
@@ -48,6 +48,24 @@ mediaRouter.get("/:imdbID", async (req, res, next) => {
     next(error);
   }
 });
+
+mediaRouter.get("/:imdbID/reviews", async (req, res, next) => {
+    try {
+      const reviews = await getReviewsJson();
+      const reviewsByProductId = reviews.filter(
+        (review) => review.imdbID === req.params.imdbID
+      );
+      if (reviewsByProductId.length) {
+        res.send(reviewsByProductId);
+      } else {
+        next(
+          createHttpError(404, `No reviews found for ${req.params.imdbID}`)
+        );
+      }
+    } catch (error) {
+      next(error);
+    }
+  });
 
 mediaRouter.post("/", mediaValidationMiddlewares, async (req, res, next) => {
   try {
