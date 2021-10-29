@@ -33,14 +33,30 @@ mediaRouter.get("/", async (req, res, next) => {
   }
 });
 
+mediaRouter.get("/:imdbID", async (req, res, next) => {
+  try {
+    const medias = await getMediaJson();
+    const media = medias.find((p) => p._id === req.params.imdbID);
+    if (media) {
+      res.send(media);
+    } else {
+      next(
+        createHttpError(404, `Products with id ${req.params.imdbID} not found!`)
+      );
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
 mediaRouter.post("/", mediaValidationMiddlewares, async (req, res, next) => {
   try {
     const errorList = validationResult(req);
     if (errorList.isEmpty()) {
       const media = await getMediaJson();
       const newMedia = {
-          imdbID: uniqid(),
-          ...req.body,
+        imdbID: uniqid(),
+        ...req.body,
         createdAt: new Date(),
         updatedAt: new Date(),
       };
