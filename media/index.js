@@ -50,22 +50,46 @@ mediaRouter.get("/:imdbID", async (req, res, next) => {
 });
 
 mediaRouter.get("/:imdbID/reviews", async (req, res, next) => {
+  try {
+    const reviews = await getReviewsJson();
+    const reviewsByProductId = reviews.filter(
+      (review) => review.imdbID === req.params.imdbID
+    );
+    if (reviewsByProductId.length) {
+      res.send(reviewsByProductId);
+    } else {
+      next(createHttpError(404, `No reviews found for ${req.params.imdbID}`));
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+mediaRouter.put(
+  "/:imdbID",
+  mediaValidationMiddlewares,
+  async (req, res, next) => {
     try {
-      const reviews = await getReviewsJson();
-      const reviewsByProductId = reviews.filter(
-        (review) => review.imdbID === req.params.imdbID
-      );
-      if (reviewsByProductId.length) {
-        res.send(reviewsByProductId);
-      } else {
-        next(
-          createHttpError(404, `No reviews found for ${req.params.imdbID}`)
+      const errorList = validationResult(req);
+      if (errorList.isEmpty()) {
+        const medias = await getReviewsJson();
+        const index = medias.findIndex(
+          (media) => media.imdbID === req.params.imdbID
         );
+        const mediaToModify = medias[index];
+        const updatedFields = { ...req.body, updatedDate: new Date() };
+        const updatedMedia = { ...mediaToModify, ...updatedFields };
+        medias[index] = updatedMedia;
+        await writeMediaJson(medias);
+        res.status(200).send({ imdbID: medias[index].imdbID });
+      } else {
+        next(createHttpError(400, { errorList }));
       }
     } catch (error) {
       next(error);
     }
-  });
+  }
+);
 
 mediaRouter.post("/", mediaValidationMiddlewares, async (req, res, next) => {
   try {
