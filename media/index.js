@@ -91,6 +91,19 @@ mediaRouter.put(
   }
 );
 
+mediaRouter.delete("/:imdbID", async (req, res, next) => {
+    try {
+      const medias = await getReviewsJson();
+      const remainingMedias = medias.filter(
+        (media) => media.imdbID !== req.params.imdbID
+      );
+      await writeMediaJson(remainingMedias);
+      res.status(204).send();
+    } catch (error) {
+      next(error);
+    }
+  });
+
 mediaRouter.post("/", mediaValidationMiddlewares, async (req, res, next) => {
   try {
     const errorList = validationResult(req);
